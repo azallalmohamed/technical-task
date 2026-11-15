@@ -212,6 +212,10 @@ module cve2_core import cve2_pkg::*; #(
   logic [31:0] multdiv_operand_a_ex;
   logic [31:0] multdiv_operand_b_ex;
 
+  // Custom-0 isqrt Control
+  logic        isqrt_en_ex;
+  logic        isqrt_sel_ex;
+
   // CSR control
   logic        csr_access;
   csr_op_e     csr_op;
@@ -436,6 +440,10 @@ module cve2_core import cve2_pkg::*; #(
     .multdiv_signed_mode_ex_o(multdiv_signed_mode_ex),
     .multdiv_operand_a_ex_o  (multdiv_operand_a_ex),
     .multdiv_operand_b_ex_o  (multdiv_operand_b_ex),
+    
+    // custom-0 isqrt
+    .isqrt_en_ex_o           (isqrt_en_ex),
+    .isqrt_sel_ex_o          (isqrt_sel_ex),
 
     // CSR ID/EX
     .csr_access_o         (csr_access),
@@ -556,6 +564,10 @@ module cve2_core import cve2_pkg::*; #(
     .multdiv_signed_mode_i(multdiv_signed_mode_ex),
     .multdiv_operand_a_i  (multdiv_operand_a_ex),
     .multdiv_operand_b_i  (multdiv_operand_b_ex),
+
+    // Custom-0 isqrt signal from ID stage
+    .isqrt_en_i           (isqrt_en_ex),
+    .isqrt_sel_i          (isqrt_sel_ex),
 
     // Intermediate value register
     .imd_val_we_o(imd_val_we_ex),

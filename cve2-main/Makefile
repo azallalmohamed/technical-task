@@ -47,6 +47,11 @@ test:
 	$(MAKE) run TEST=sw_isqrt
 	$(MAKE) run TEST=hw_isqrt
 
+# Extended verification (longer: ~12M simulated cycles for hw_isqrt_full)
+test-all: test
+	$(MAKE) run TEST=hw_isqrt_full
+	$(MAKE) run TEST=bench_isqrt
+
 clean:
 	rm -rf build
 

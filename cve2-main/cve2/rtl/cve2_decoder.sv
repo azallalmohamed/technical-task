@@ -76,6 +76,11 @@ module cve2_decoder #(
   output logic                     mult_sel_o,            // as above but static, for data muxes
   output logic                     div_sel_o,             // as above but static, for data muxes
 
+  // custom-0 isqrt
+  output logic                     isqrt_en_o,            // custom-0 isqrt instruction, dynamic
+  output logic                     isqrt_sel_o,           // as above but static, for data muxes
+
+
   output cve2_pkg::md_op_e         multdiv_operator_o,
   output logic [1:0]               multdiv_signed_mode_o,
 
@@ -105,6 +110,7 @@ module cve2_decoder #(
   logic        illegal_reg_rv32e;
   logic        csr_illegal;
   logic        rf_we;
+  logic        isqrt_sel; // custom-0 isqrt
 
   logic [31:0] instr;
   logic [31:0] instr_alu;
@@ -234,6 +240,7 @@ module cve2_decoder #(
     dret_insn_o           = 1'b0;
     ecall_insn_o          = 1'b0;
     wfi_insn_o            = 1'b0;
+    isqrt_sel             = 1'b0; // custom-0 isqrt
 
     opcode                = opcode_e'(instr[6:0]);
 
@@ -336,6 +343,23 @@ module cve2_decoder #(
             illegal_insn = 1'b1;
           end
         endcase
+      end
+
+      ////////////////////////////
+      // Custom-0: isqrt rd,rs1 //
+      ////////////////////////////
+
+      OPCODE_CUSTOM_0: begin
+        // Only one encoding is legal: funct7 = 0, rs2 = 0, funct3 = 0.
+        // Every other custom-0 encoding stays an illegal instruction.
+        if (instr[31:25] == 7'b000_0000 && instr[24:20] == 5'b0_0000 &&
+            instr[14:12] == 3'b000) begin
+          isqrt_sel  = 1'b1;
+          rf_ren_a_o = 1'b1;     // reads rs1 only
+          rf_we      = 1'b1;     // writes rd (suppressed for x0 by the register file)
+        end else begin
+          illegal_insn = 1'b1;
+        end
       end
 
       /////////
@@ -1171,6 +1195,12 @@ module cve2_decoder #(
   // do not enable multdiv in case of illegal instruction exceptions
   assign mult_en_o = illegal_insn ? 1'b0 : mult_sel_o;
   assign div_en_o  = illegal_insn ? 1'b0 : div_sel_o;
+
+  // isqrt: static select is the decoded legal encoding; dynamic enable is additionally
+  // gated with illegal_insn (compressed-decoder error, RV32E) so a rejected instruction
+  // never starts the unit.
+  assign isqrt_sel_o = isqrt_sel & ~illegal_insn;
+  assign isqrt_en_o  = isqrt_sel_o;
 
   // make sure instructions accessing non-available registers in RV32E cause illegal
   // instruction exceptions

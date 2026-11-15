@@ -300,7 +300,10 @@ package cve2_tracer_pkg;
   // MISC-MEM
   parameter logic [31:0] INSN_FENCE   = { 17'h?,             3'b000, 5'h?, {OPCODE_MISC_MEM} };
   parameter logic [31:0] INSN_FENCEI  = { 17'h0,             3'b001, 5'h0, {OPCODE_MISC_MEM} };
-
+  
+  // custom-0: isqrt rd, rs1
+  parameter logic [31:0] INSN_ISQRT   = { 12'b000000000000, 5'h?, 3'b000, 5'h?, 7'h0b };
+  
   // Compressed Instructions
   // C0
   parameter logic [15:0] INSN_CADDI4SPN  = { 3'b000,       11'h?,                    {OPCODE_C0} };

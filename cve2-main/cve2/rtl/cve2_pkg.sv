@@ -52,6 +52,7 @@ package cve2_pkg;
 
   typedef enum logic [6:0] {
     OPCODE_LOAD     = 7'h03,
+    OPCODE_CUSTOM_0 = 7'h0b,   // custom-0: isqrt
     OPCODE_MISC_MEM = 7'h0f,
     OPCODE_OP_IMM   = 7'h13,
     OPCODE_AUIPC    = 7'h17,

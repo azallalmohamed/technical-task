@@ -912,6 +912,10 @@ module cve2_tracer (
         // LOAD & STORE
         INSN_LOAD:       decode_load_insn();
         INSN_STORE:      decode_store_insn();
+
+        // custom-0
+        INSN_ISQRT:      decode_r1_insn("isqrt");
+
         // MISC-MEM
         INSN_FENCE:      decode_fence();
         INSN_FENCEI:     decode_mnemonic("fence.i");

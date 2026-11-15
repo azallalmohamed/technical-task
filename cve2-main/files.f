@@ -19,6 +19,7 @@ cve2/rtl/cve2_decoder.sv
 cve2/rtl/cve2_ex_block.sv
 cve2/rtl/cve2_fetch_fifo.sv
 cve2/rtl/cve2_id_stage.sv
+cve2/rtl/cve2_isqrt.sv
 cve2/rtl/cve2_if_stage.sv
 cve2/rtl/cve2_load_store_unit.sv
 cve2/rtl/cve2_multdiv_fast.sv

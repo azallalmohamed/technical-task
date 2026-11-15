@@ -32,6 +32,10 @@ module cve2_ex_block #(
   input  logic [31:0]           multdiv_operand_a_i,
   input  logic [31:0]           multdiv_operand_b_i,
 
+  // custom-0 isqrt
+  input  logic                  isqrt_en_i,            // dynamic enable, for FSM control
+  input  logic                  isqrt_sel_i,           // static decoder output, for data muxes
+
   // intermediate val reg
   output logic [1:0]            imd_val_we_o,
   output logic [33:0]           imd_val_d_o[2],
@@ -61,6 +65,10 @@ module cve2_ex_block #(
   logic [33:0] multdiv_imd_val_d[2];
   logic [ 1:0] multdiv_imd_val_we;
 
+  // custom-0 isqrt
+  logic        isqrt_valid;
+  logic [31:0] isqrt_result;
+
   /*
     The multdiv_i output is never selected if RV32M=RV32MNone
     At synthesis time, all the combinational and sequential logic
@@ -79,7 +87,9 @@ module cve2_ex_block #(
 
   assign alu_imd_val_q = '{imd_val_q_i[0][31:0], imd_val_q_i[1][31:0]};
 
-  assign result_ex_o  = multdiv_sel ? multdiv_result : alu_result;
+  // Result mux: isqrt unit > mul/div unit > ALU
+  assign result_ex_o  = isqrt_sel_i ? isqrt_result :
+                        multdiv_sel ? multdiv_result : alu_result;
 
   // branch handling
   assign branch_decision_o  = alu_cmp_result;
@@ -175,9 +185,28 @@ module cve2_ex_block #(
     assign multdiv_imd_val_we = '0;
   end
 
+  ///////////
+  // isqrt //
+  ///////////
+
+  // Iterative integer square root (custom-0 instruction). rs1 arrives on the same
+  // operand-A bus as the multiplier/divider, so no extra register-file port is needed.
+  cve2_isqrt #(
+    .ITER_PER_CYCLE(1)
+  ) isqrt_i (
+    .clk_i    (clk_i),
+    .rst_ni   (rst_ni),
+    .en_i     (isqrt_en_i),
+    .operand_i(multdiv_operand_a_i),
+    .valid_o  (isqrt_valid),
+    .result_o (isqrt_result)
+  );
+
   // Multiplier/divider may require multiple cycles. The ALU output is valid in the same cycle
   // unless the intermediate result register is being written (which indicates this isn't the
   // final cycle of ALU operation).
-  assign ex_valid_o = multdiv_sel ? multdiv_valid : ~(|alu_imd_val_we);
+  // isqrt owns its private state, so it does not touch the shared intermediate-value registers.
+  assign ex_valid_o = isqrt_sel_i ? isqrt_valid :
+                      multdiv_sel ? multdiv_valid : ~(|alu_imd_val_we);
 
 endmodule

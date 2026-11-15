@@ -80,6 +80,10 @@ module cve2_id_stage #(
   output logic [31:0]               multdiv_operand_a_ex_o,
   output logic [31:0]               multdiv_operand_b_ex_o,
 
+  // custom-0 isqrt
+  output logic                      isqrt_en_ex_o,    // dynamic enable for the EX unit
+  output logic                      isqrt_sel_ex_o,   // static select for EX result mux  
+
   // CSR
   output logic                      csr_access_o,
   output cve2_pkg::csr_op_e         csr_op_o,
@@ -258,6 +262,9 @@ module cve2_id_stage #(
   logic        multdiv_en_dec;
   md_op_e      multdiv_operator;
   logic [1:0]  multdiv_signed_mode;
+
+  logic        isqrt_en_dec;    // custom-0 isqrt (legal) decoded
+  logic        isqrt_en_id;
 
   // Data Memory Control
   logic        lsu_we;
@@ -569,6 +576,10 @@ module cve2_id_stage #(
     .div_sel_o            (div_sel_ex_o),
     .multdiv_operator_o   (multdiv_operator),
     .multdiv_signed_mode_o(multdiv_signed_mode),
+    
+    // custom-0 isqrt
+    .isqrt_en_o           (isqrt_en_dec),
+    .isqrt_sel_o          (isqrt_sel_ex_o),
 
     // CSRs
     .csr_access_o(csr_access_o),
@@ -706,11 +717,15 @@ module cve2_id_stage #(
     .perf_tbranch_o(perf_tbranch_o)
   );
 
-  assign multdiv_en_dec   = mult_en_dec | div_en_dec;
+  // isqrt is treated like mul/div by the ID FSM: a multi-cycle EX operation that stalls ID
+  // (stall_multdiv) and writes rd in the cycle ex_valid_i is asserted.
+  assign multdiv_en_dec   = mult_en_dec | div_en_dec | isqrt_en_dec;
 
   assign lsu_req         = instr_executing ? data_req_allowed & lsu_req_dec  : 1'b0;
   assign mult_en_id      = instr_executing ? mult_en_dec                     : 1'b0;
   assign div_en_id       = instr_executing ? div_en_dec                      : 1'b0;
+  
+  assign isqrt_en_id     = instr_executing ? isqrt_en_dec                    : 1'b0;
 
   assign lsu_req_o               = lsu_req;
   assign lsu_we_o                = lsu_we;
@@ -729,6 +744,8 @@ module cve2_id_stage #(
 
   assign mult_en_ex_o                = mult_en_id;
   assign div_en_ex_o                 = div_en_id;
+
+  assign isqrt_en_ex_o               = isqrt_en_id;
 
   assign multdiv_operator_ex_o       = multdiv_operator;
   assign multdiv_signed_mode_ex_o    = multdiv_signed_mode;
